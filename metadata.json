@@ -1,0 +1,6 @@
+{
+  "name": "eCommerce AI Business Partner",
+  "description": "An AI-powered SaaS platform for eCommerce sellers from TikTok Shop, Daraz, Shopify, and Facebook to manage inventory, track sales, forecast demand, and draft marketing strategies.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
