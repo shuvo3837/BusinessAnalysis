@@ -18,7 +18,4 @@ services:
         value: BizMindAdmin2026!
       - key: MONGODB_URI
         value: ""
-    disk:
-      name: bizmind-data
-      mountPath: /data
-      sizeGB: 1
+   
