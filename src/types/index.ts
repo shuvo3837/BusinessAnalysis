@@ -3,7 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export type UserRole = "Seller" | "Business" | "Admin";
+// The frontend never sees the admin role — admin auth lives in a separate
+// JWT-protected surface (see /api/admin/login and /admin/login in the router).
+export type UserRole = "Seller";
 
 export interface User {
   id: string;

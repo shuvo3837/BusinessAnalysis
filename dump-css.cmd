@@ -1,0 +1,2 @@
+@echo off
+"C:\Program Files\Google\Chrome\Application\chrome.exe" --headless --disable-gpu --no-sandbox --dump-dom --virtual-time-budget=8000 --enable-logging --v=1 "http://localhost:3000/login" > "C:\projects\BusinessAnalysis\dom-with-logs.html" 2>nul

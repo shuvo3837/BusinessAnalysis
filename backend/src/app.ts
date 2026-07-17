@@ -21,6 +21,8 @@ import {
 import { connectMongoWithFallback } from "./database/connection";
 import { loadCollections, createFallbackCollections, Collections } from "./database/collections";
 import { resolveServerPort } from "./utils/port";
+import { verifyAdminCredentials, signAdminJwt } from "./services/adminAuth";
+import { requireAdmin } from "./middleware/requireAdmin";
 
 // Resolves this module's path in BOTH ESM (tsx / dev) and CJS (esbuild / `npm run build`).
 // In CJS, `__filename` / `__dirname` are provided natively; in ESM we derive them from
@@ -272,18 +274,27 @@ async function startServer() {
 
   // AUTH API
   app.post("/api/auth/register", (req, res) => {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
     if (!name || !email || !password) {
       return res.status(400).json({ error: "Required fields missing." });
+    }
+    // Admin is a separate auth system (see /api/admin/login) — never let the
+    // admin email be registered as a normal user.
+    if (
+      process.env.ADMIN_EMAIL &&
+      email.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase()
+    ) {
+      return res.status(409).json({ error: "This email cannot be registered." });
     }
     if (db.users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
       return res.status(400).json({ error: "Email already registered." });
     }
+    // Role is fixed at registration time — clients cannot self-elevate.
     const newUser: User = {
       id: "u-" + Math.random().toString(36).substr(2, 9),
       name,
       email,
-      role: role || "Seller",
+      role: "Seller",
       createdAt: new Date().toISOString()
     };
     db.users.push(newUser);
@@ -296,6 +307,14 @@ async function startServer() {
     const { email, password } = req.body;
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required." });
+    }
+    // Admin must use /api/admin/login — never let the admin email register
+    // through this endpoint even if dev convenience would auto-create it.
+    if (
+      process.env.ADMIN_EMAIL &&
+      email.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase()
+    ) {
+      return res.status(404).json({ error: "Account not found." });
     }
     
     // Simulating login: verify or dynamically register/find
@@ -327,6 +346,62 @@ async function startServer() {
       return res.status(401).json({ error: "Unauthorized access." });
     }
     res.json({ user });
+  });
+
+  // --- ADMIN API (separate auth, hidden URL) ---
+  // Admin credentials live in env (ADMIN_EMAIL / ADMIN_PASSWORD). There is no
+  // admin user record in the database and no link to /admin/login anywhere
+  // in the public frontend. All /api/admin/* routes are gated by requireAdmin.
+  app.post("/api/admin/login", async (req, res) => {
+    const { email, password } = req.body || {};
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required." });
+    }
+    try {
+      const result = await verifyAdminCredentials(email, password);
+      if (!result.ok) {
+        return res.status(401).json({ error: "Invalid admin credentials." });
+      }
+      const token = signAdminJwt(result.principal);
+      // Strip the internal id from the public response shape.
+      const { id, ...adminPublic } = result.principal;
+      return res.json({
+        admin: adminPublic,
+        token,
+        message: "Admin authentication successful.",
+      });
+    } catch (err) {
+      console.error("[admin login] error:", err);
+      return res.status(500).json({ error: "Admin auth unavailable." });
+    }
+  });
+
+  app.get("/api/admin/verify", requireAdmin, (req, res) => {
+    res.json({ admin: req.admin });
+  });
+
+  // Protected admin endpoints — gated by requireAdmin middleware.
+  app.get("/api/admin/users", requireAdmin, (req, res) => {
+    res.json({
+      count: db.users.length,
+      users: db.users.map(u => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        createdAt: u.createdAt,
+      })),
+    });
+  });
+
+  app.get("/api/admin/stats", requireAdmin, (req, res) => {
+    res.json({
+      users: db.users.length,
+      products: db.products.length,
+      sales: db.sales.length,
+      expenses: db.expenses.length,
+      chats: db.chats.length,
+    });
   });
 
   // INVENTORY API

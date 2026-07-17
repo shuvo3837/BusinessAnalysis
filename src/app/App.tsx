@@ -15,6 +15,9 @@ import NoteScanner from "../components/inventory/NoteScanner";
 import Sidebar from "../components/common/Sidebar";
 import FloatingChatAssistant from "../components/ai/FloatingChatAssistant";
 
+import AdminLogin from "../admin/AdminLogin";
+import AdminDashboard from "../admin/AdminDashboard";
+
 import { LogOut, Target } from "lucide-react";
 
 // Ensure the App content is correctly arranged
@@ -38,6 +41,12 @@ function AppContent() {
   }, []);
 
   const triggerDataRefresh = () => setRefreshTrigger((prev) => prev + 1);
+
+  // The hidden admin surface is rendered by a sibling <Routes> block. Don't
+  // let the user-auth gate render the LandingPage on top of it.
+  if (location.pathname.startsWith("/admin")) {
+    return null;
+  }
 
   if (!isAuthenticated && location.pathname !== "/login") {
      return <LandingPage onLoginClick={() => window.location.href='/login'} />
@@ -87,6 +96,15 @@ export default function App() {
   return (
     <BusinessProvider>
       <BrowserRouter>
+        {/* Hidden admin surface — entirely separate auth, not linked from the
+            user app. Routes are listed before AppContent so they bypass the
+            user-auth gate. */}
+        <Routes>
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
+          <Route path="/admin/*" element={<Navigate to="/admin/login" replace />} />
+        </Routes>
         <AppContent />
       </BrowserRouter>
     </BusinessProvider>
