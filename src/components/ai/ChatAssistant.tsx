@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { apiFetch } from "../../lib/api";
 import { Send, Bot, Sparkles, Loader2, ArrowRight } from "lucide-react";
 import { useBusiness } from "../../context/BusinessContext";
 import Markdown from "react-markdown";
@@ -41,7 +42,7 @@ export default function ChatAssistant() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/chat", {
+      const res = await apiFetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 

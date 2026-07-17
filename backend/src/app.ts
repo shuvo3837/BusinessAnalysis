@@ -6,6 +6,7 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
+import cors from "cors";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import {
@@ -51,6 +52,15 @@ async function startServer() {
   const PORT = resolveServerPort(process.env.PORT, 3000);
 
   app.use(express.json({ limit: "50mb" }));
+
+  // CORS for split-origin deploys (frontend on Vercel, backend on Render).
+  // When the SPA and API share an origin this is a no-op.
+  app.use(
+    cors({
+      origin: (origin, cb) => cb(null, true),
+      credentials: false,
+    })
+  );
 
   // Connect to MongoDB and hydrate in-memory caches for each collection.
   // Route handlers see an array-like facade (push/find/filter/...) so the
@@ -1176,6 +1186,15 @@ Note: For the 'analytics' object, generate an updated mock/simulated full analyt
   app.post("/api/reset-demo", async (req, res) => {
     await seedDb();
     res.json({ success: true, message: "Demo database reset to initial seeded values." });
+  });
+
+  // --- HEALTH CHECK (used by Render's healthCheckPath) ---
+  app.get("/api/health", (_req, res) => {
+    res.json({
+      ok: true,
+      service: "bizmind-api",
+      time: new Date().toISOString(),
+    });
   });
 
   // --- VITE MIDDLEWARE SETUP & STATIC ASSETS HANDLERS ---

@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef } from "react";
+import { apiFetch } from "../../lib/api";
 import { Camera, Upload, CheckCircle2, FileText, Loader2, X, AlertCircle } from 'lucide-react';
 import { useBusiness } from '../../context/BusinessContext';
 import { useNavigate } from 'react-router-dom';
@@ -33,7 +34,7 @@ export default function NoteScanner() {
     
     try {
       const base64Data = imageSrc.split(',')[1];
-      const res = await fetch("/api/scan-note", {
+      const res = await apiFetch("/api/scan-note", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ base64Data, mimeType: "image/jpeg" })

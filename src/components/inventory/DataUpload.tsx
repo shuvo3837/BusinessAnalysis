@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { apiFetch } from '../../lib/api';
 import { useDropzone } from 'react-dropzone';
 import { UploadCloud, FileSpreadsheet, FileText, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useBusiness } from '../../context/BusinessContext';
@@ -32,7 +33,7 @@ export default function DataUpload() {
           fileMimeType = "application/octet-stream";
         }
 
-        const res = await fetch("/api/analyze-file", {
+        const res = await apiFetch("/api/analyze-file", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

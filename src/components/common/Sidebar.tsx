@@ -23,7 +23,7 @@ export default function Sidebar({ user, onLogout, onTriggerRefresh }: any) {
     if (!window.confirm("Are you sure you want to reset the database?")) return;
     setLoadingReset(true);
     try {
-      const res = await fetch("/api/seed", { method: "POST" });
+      const res = await apiFetch("/api/seed", { method: "POST" });
       if (!res.ok) throw new Error("Failed to reset");
       alert("Database reset successfully.");
       onTriggerRefresh(); 

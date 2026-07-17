@@ -1,7 +1,8 @@
 backend/
 backend.log
 node_modules/
-dist/
+server.ts
+server.cjs
 .puku/
 *.log
 *.ps1
@@ -19,4 +20,5 @@ login-screenshot.png
 served-*.tsx
 served-*.js
 served-*.css
+render.yaml
 .env

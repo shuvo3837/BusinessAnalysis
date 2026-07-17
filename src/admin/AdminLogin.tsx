@@ -8,6 +8,7 @@
  */
 
 import React, { useState } from "react";
+import { apiFetch } from "../lib/api";
 
 const ADMIN_TOKEN_KEY = "bizmind_admin_token";
 const ADMIN_USER_KEY = "bizmind_admin_user";
@@ -24,7 +25,7 @@ export default function AdminLogin() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/admin/login", {
+      const res = await apiFetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

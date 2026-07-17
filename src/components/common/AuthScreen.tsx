@@ -18,6 +18,7 @@ import {
   Check,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { apiFetch } from "../../lib/api";
 
 interface AuthScreenProps {
   onSuccess: (token: string) => void;
@@ -125,7 +126,7 @@ export default function AuthScreen({ onSuccess, onBack }: AuthScreenProps) {
       : { name, email, password };
 
     try {
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

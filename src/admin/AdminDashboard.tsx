@@ -13,6 +13,7 @@ import {
   ADMIN_TOKEN_STORAGE_KEY,
   ADMIN_USER_STORAGE_KEY,
 } from "./AdminLogin";
+import { apiFetch } from "../lib/api";
 
 interface AdminIdentity {
   email: string;
@@ -38,7 +39,7 @@ interface AdminUserRow {
 
 async function adminFetch(path: string): Promise<Response> {
   const token = localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY);
-  return fetch(path, {
+  return apiFetch(path, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
 }

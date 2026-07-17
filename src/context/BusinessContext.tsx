@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { apiFetch } from '../lib/api';
 
 export const BusinessContext = createContext<any>(null);
 
@@ -9,7 +10,7 @@ export const BusinessProvider = ({ children }: { children: React.ReactNode }) =>
 
   useEffect(() => {
     if (!customAnalytics && localStorage.getItem("partner_token")) {
-      fetch("/api/analytics", {
+      apiFetch("/api/analytics", {
         headers: {
             "Authorization": `Bearer ${localStorage.getItem("partner_token")}`
         }

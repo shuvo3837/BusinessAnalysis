@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { apiFetch } from "../../lib/api";
 import {
   MessageCircle,
   X,
@@ -58,7 +59,7 @@ export default function FloatingChatAssistant() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/chat");
+        const res = await apiFetch("/api/chat");
         if (!res.ok) throw new Error(`History HTTP ${res.status}`);
         const data: Array<{ id: string; role: Role; text: string; createdAt: string }> = await res.json();
         if (cancelled) return;
@@ -130,7 +131,7 @@ export default function FloatingChatAssistant() {
       setLoading(true);
 
       try {
-        const res = await fetch("/api/chat", {
+        const res = await apiFetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
