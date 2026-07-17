@@ -18,8 +18,9 @@ import {
   MarketingStrategy,
   ChatMessage
 } from "./types";
-import { connectMongo } from "./database/connection";
-import { loadCollections, Collections } from "./database/collections";
+import { connectMongoWithFallback } from "./database/connection";
+import { loadCollections, createFallbackCollections, Collections } from "./database/collections";
+import { resolveServerPort } from "./utils/port";
 
 // Resolves this module's path in BOTH ESM (tsx / dev) and CJS (esbuild / `npm run build`).
 // In CJS, `__filename` / `__dirname` are provided natively; in ESM we derive them from
@@ -45,15 +46,21 @@ if (typeof (globalThis as { __dirname?: unknown }).__dirname !== "string") {
 // Setup and start server
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = resolveServerPort(process.env.PORT, 3000);
 
   app.use(express.json({ limit: "50mb" }));
 
   // Connect to MongoDB and hydrate in-memory caches for each collection.
   // Route handlers see an array-like facade (push/find/filter/...) so the
   // vast majority of existing handler code works unchanged.
-  const mongoDb = await connectMongo();
-  const db: Collections = await loadCollections(mongoDb);
+  const mongoState = await connectMongoWithFallback();
+  let db: Collections;
+  if (mongoState.connected && mongoState.db) {
+    db = await loadCollections(mongoState.db);
+  } else {
+    console.warn("Using fallback in-memory data because MongoDB is unavailable.");
+    db = createFallbackCollections();
+  }
 
   // Generate seeds for realistic eCommerce operation
   async function seedDb() {
@@ -1091,11 +1098,20 @@ Note: For the 'analytics' object, generate an updated mock/simulated full analyt
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
+  const server = app.listen(PORT, "0.0.0.0", () => {
     console.log(`Express server running on http://0.0.0.0:${PORT}`);
+  });
+
+  server.on("error", (err: NodeJS.ErrnoException) => {
+    if (err.code === "EADDRINUSE") {
+      console.error(`Port ${PORT} is already in use. Stop the existing process or set PORT to a different value.`);
+      process.exit(1);
+    }
+    throw err;
   });
 }
 
 startServer().catch((err) => {
   console.error("Server failed to boot:", err);
+  process.exit(1);
 });

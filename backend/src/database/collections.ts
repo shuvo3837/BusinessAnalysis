@@ -180,11 +180,110 @@ class CollectionStore<T extends { id: string }> {
 }
 
 export interface Collections {
-  users: CollectionStore<User>;
-  products: CollectionStore<Product>;
-  sales: CollectionStore<SaleRecord>;
-  expenses: CollectionStore<ExpenseRecord>;
-  chats: CollectionStore<ChatMessage>;
+  users: CollectionStore<User> | MemoryCollectionStore<User>;
+  products: CollectionStore<Product> | MemoryCollectionStore<Product>;
+  sales: CollectionStore<SaleRecord> | MemoryCollectionStore<SaleRecord>;
+  expenses: CollectionStore<ExpenseRecord> | MemoryCollectionStore<ExpenseRecord>;
+  chats: CollectionStore<ChatMessage> | MemoryCollectionStore<ChatMessage>;
+}
+
+class MemoryCollectionStore<T extends { id: string }> {
+  private cache: T[] = [];
+  private readonly name: string;
+
+  constructor(name: string) {
+    this.name = name;
+  }
+
+  async hydrate(): Promise<void> {
+    this.cache = [];
+    console.log(`[mongo] ${this.name}: hydrated 0 document(s).`);
+  }
+
+  isEmpty(): boolean {
+    return this.cache.length === 0;
+  }
+
+  push(doc: T): number {
+    this.cache.push(doc);
+    return this.cache.length;
+  }
+
+  async replaceAll(docs: T[]): Promise<void> {
+    this.cache = [...docs];
+  }
+
+  async updateOne(predicate: (item: T) => boolean, updater: (item: T) => T): Promise<boolean> {
+    const idx = this.cache.findIndex(predicate);
+    if (idx === -1) return false;
+    this.cache[idx] = updater({ ...this.cache[idx] });
+    return true;
+  }
+
+  async removeWhere(predicate: (item: T) => boolean): Promise<number> {
+    const idsToRemove = this.cache.filter(predicate).map((x) => x.id);
+    if (idsToRemove.length === 0) return 0;
+    this.cache = this.cache.filter((x) => !predicate(x));
+    return idsToRemove.length;
+  }
+
+  get length(): number {
+    return this.cache.length;
+  }
+
+  find(predicate: (item: T) => boolean): T | undefined {
+    return this.cache.find(predicate);
+  }
+
+  filter(predicate: (item: T) => boolean): T[] {
+    return this.cache.filter(predicate);
+  }
+
+  findIndex(predicate: (item: T) => boolean): number {
+    return this.cache.findIndex(predicate);
+  }
+
+  some(predicate: (item: T) => boolean): boolean {
+    return this.cache.some(predicate);
+  }
+
+  map<U>(mapper: (item: T) => U): U[] {
+    return this.cache.map(mapper);
+  }
+
+  forEach(visitor: (item: T, index: number, arr: T[]) => void): void {
+    this.cache.forEach(visitor);
+  }
+
+  reduce<U>(reducer: (acc: U, item: T) => U, initial: U): U {
+    return this.cache.reduce(reducer, initial);
+  }
+
+  slice(start?: number, end?: number): T[] {
+    return this.cache.slice(start, end);
+  }
+
+  toArray(): T[] {
+    return [...this.cache];
+  }
+
+  [Symbol.iterator](): Iterator<T> {
+    return this.cache[Symbol.iterator]();
+  }
+
+  toJSON(): T[] {
+    return this.toArray();
+  }
+}
+
+export function createFallbackCollections(): Collections {
+  return {
+    users: new MemoryCollectionStore<User>("users"),
+    products: new MemoryCollectionStore<Product>("products"),
+    sales: new MemoryCollectionStore<SaleRecord>("sales"),
+    expenses: new MemoryCollectionStore<ExpenseRecord>("expenses"),
+    chats: new MemoryCollectionStore<ChatMessage>("chats")
+  };
 }
 
 export async function loadCollections(db: Db): Promise<Collections> {

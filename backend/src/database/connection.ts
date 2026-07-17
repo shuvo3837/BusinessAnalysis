@@ -3,6 +3,12 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 
+export interface MongoConnectionState {
+  db: Db | null;
+  connected: boolean;
+  error?: Error;
+}
+
 // Load .env from project root (one level up from backend/src).
 const __filename = fileURLToPath(import.meta.url);
 const __envDirname = path.dirname(__filename);
@@ -30,11 +36,30 @@ export async function connectMongo(uri?: string): Promise<Db> {
     serverSelectionTimeoutMS: 5000,
   });
 
-  await client.connect();
-  dbInstance = client.db(DB_NAME);
+  try {
+    await client.connect();
+    dbInstance = client.db(DB_NAME);
+    console.log(`MongoDB connected: ${DB_NAME} (${connectionString.replace(/\/\/.*@/, "//***@")})`);
+    return dbInstance;
+  } catch (error) {
+    const err = error as Error;
+    console.warn("MongoDB connection failed, continuing with fallback seed data:", err.message);
+    client = null;
+    throw err;
+  }
+}
 
-  console.log(`MongoDB connected: ${DB_NAME} (${connectionString.replace(/\/\/.*@/, "//***@")})`);
-  return dbInstance;
+export async function connectMongoWithFallback(uri?: string): Promise<MongoConnectionState> {
+  try {
+    const db = await connectMongo(uri);
+    return { db, connected: true };
+  } catch (error) {
+    return {
+      db: null,
+      connected: false,
+      error: error as Error,
+    };
+  }
 }
 
 export function getDb(): Db {
