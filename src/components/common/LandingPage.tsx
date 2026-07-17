@@ -1,5 +1,5 @@
 import React from "react";
-import { ArrowRight, BarChart2, Bell, Box, Shield, Activity, TrendingUp, UploadCloud, MessageSquare } from "lucide-react";
+import { ArrowRight, BarChart2, Bell, Box, Shield, Activity, TrendingUp, UploadCloud, MessageSquare, Check, Sparkles, Crown, Zap } from "lucide-react";
 import { motion } from "motion/react";
 
 interface LandingPageProps {
@@ -145,6 +145,160 @@ export default function LandingPage({ onLoginClick }: LandingPageProps) {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section className="py-24 bg-[#12121A] relative z-10">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-medium mb-6">
+            <Sparkles className="w-4 h-4" /> Pricing built for sellers
+          </div>
+          <h2 className="font-syne text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
+            Pick a plan that scales with your store
+          </h2>
+          <p className="text-slate-400 max-w-2xl mx-auto mb-16 font-dm-sans">
+            From a single TikTok Shop stall to multi-channel empires on Shopify, Daraz
+            and Facebook — BizMind AI grows when you grow.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+            {/* Starter — hobbyist seller */}
+            <motion.div
+              variants={itemVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-80px" }}
+              className="bg-[#1A1A26] border border-[#2A2A3A] p-8 rounded-2xl flex flex-col"
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <Zap className="w-5 h-5 text-emerald-400" />
+                <span className="text-xs font-bold tracking-widest uppercase text-emerald-400">Starter</span>
+              </div>
+              <div className="flex items-baseline gap-1 mb-2">
+                <span className="font-syne text-5xl font-bold text-white">$0</span>
+                <span className="text-slate-500">/mo</span>
+              </div>
+              <p className="text-slate-400 text-sm mb-6">For first-time sellers testing the waters on one channel.</p>
+
+              <ul className="space-y-3 text-sm text-slate-300 mb-8 flex-1">
+                {[
+                  "1 connected marketplace (TikTok Shop or Daraz)",
+                  "Up to 200 orders / month tracked",
+                  "Basic sales dashboard & profit summary",
+                  "20 AI chat messages with BizMind assistant",
+                  "CSV / Excel upload — manual sync",
+                  "Email support",
+                ].map((line) => (
+                  <li key={line} className="flex items-start gap-2">
+                    <Check className="w-4 h-4 mt-0.5 text-emerald-400 shrink-0" />
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <button
+                onClick={onLoginClick}
+                className="w-full bg-[#0D0D0D] border border-[#2A2A3A] hover:border-blue-500/60 text-white py-3 rounded-xl font-bold transition-colors"
+              >
+                Start free
+              </button>
+            </motion.div>
+
+            {/* Growth — most popular */}
+            <motion.div
+              variants={itemVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-80px" }}
+              className="bg-gradient-to-b from-[#1E2A4A] to-[#1A1A26] border border-blue-500/50 p-8 rounded-2xl flex flex-col relative shadow-[0_0_30px_rgba(59,130,246,0.25)]"
+            >
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                Most popular
+              </div>
+              <div className="flex items-center gap-2 mb-4">
+                <Activity className="w-5 h-5 text-blue-400" />
+                <span className="text-xs font-bold tracking-widest uppercase text-blue-400">Growth</span>
+              </div>
+              <div className="flex items-baseline gap-1 mb-2">
+                <span className="font-syne text-5xl font-bold text-white">$29</span>
+                <span className="text-slate-400">/mo</span>
+              </div>
+              <p className="text-slate-400 text-sm mb-6">For sellers running daily ops across 2–3 channels.</p>
+
+              <ul className="space-y-3 text-sm text-slate-200 mb-8 flex-1">
+                {[
+                  "Up to 3 marketplaces (Shopify + TikTok Shop + Daraz + Facebook)",
+                  "Up to 5,000 orders / month tracked",
+                  "Full AI Business Scanner — receipts, ledgers, khata pages (OCR)",
+                  "Dead-stock detection & 30-day demand forecast",
+                  "Unlimited AI chat for growth & ad-budget advice",
+                  "Marketing strategist with channel-specific plans",
+                  "Priority chat support",
+                ].map((line) => (
+                  <li key={line} className="flex items-start gap-2">
+                    <Check className="w-4 h-4 mt-0.5 text-blue-400 shrink-0" />
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <button
+                onClick={onLoginClick}
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:shadow-[0_0_30px_rgba(59,130,246,0.7)]"
+              >
+                Start 7-day trial
+              </button>
+            </motion.div>
+
+            {/* Scale — agencies / power sellers */}
+            <motion.div
+              variants={itemVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-80px" }}
+              className="bg-[#1A1A26] border border-[#2A2A3A] p-8 rounded-2xl flex flex-col"
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <Crown className="w-5 h-5 text-amber-400" />
+                <span className="text-xs font-bold tracking-widest uppercase text-amber-400">Scale</span>
+              </div>
+              <div className="flex items-baseline gap-1 mb-2">
+                <span className="font-syne text-5xl font-bold text-white">$79</span>
+                <span className="text-slate-400">/mo</span>
+              </div>
+              <p className="text-slate-400 text-sm mb-6">For agencies & sellers managing multiple brands at scale.</p>
+
+              <ul className="space-y-3 text-sm text-slate-300 mb-8 flex-1">
+                {[
+                  "Unlimited connected marketplaces & brands",
+                  "Unlimited orders / month tracked",
+                  "Team seats — up to 10 staff members",
+                  "Multi-store analytics & cross-channel inventory view",
+                  "Custom AI models tuned to your categories",
+                  "Auto-generated weekly strategy reports (PDF)",
+                  "Dedicated success manager + onboarding",
+                ].map((line) => (
+                  <li key={line} className="flex items-start gap-2">
+                    <Check className="w-4 h-4 mt-0.5 text-amber-400 shrink-0" />
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <button
+                onClick={onLoginClick}
+                className="w-full bg-[#0D0D0D] border border-amber-500/40 hover:border-amber-400 text-amber-300 py-3 rounded-xl font-bold transition-colors"
+              >
+                Talk to sales
+              </button>
+            </motion.div>
+          </div>
+
+          <p className="text-slate-500 text-xs mt-10">
+            Prices in USD. BDT / local-currency billing available. Cancel anytime — no
+            long-term lock-in.
+          </p>
         </div>
       </section>
 

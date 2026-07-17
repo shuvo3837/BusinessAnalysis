@@ -91,9 +91,6 @@ export default function Sidebar({ user, onLogout, onTriggerRefresh }: any) {
         </nav>
 
         <div className="p-4 border-t border-slate-800 mt-auto space-y-2">
-          <NavLink to="/settings" onClick={() => setMobileMenuOpen(false)} className={navItemClass('/settings')}>
-            <Target className="w-4 h-4" /> Admin Settings
-          </NavLink>
           <div className="flex items-center gap-3 px-3 py-2 mt-4">
             <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold text-xs ring-1 ring-indigo-500/50">
               {user?.name?.charAt(0) || "U"}

@@ -278,23 +278,20 @@ async function startServer() {
     if (!name || !email || !password) {
       return res.status(400).json({ error: "Required fields missing." });
     }
-    // Admin is a separate auth system (see /api/admin/login) — never let the
-    // admin email be registered as a normal user.
-    if (
-      process.env.ADMIN_EMAIL &&
-      email.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase()
-    ) {
-      return res.status(409).json({ error: "This email cannot be registered." });
-    }
     if (db.users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
       return res.status(400).json({ error: "Email already registered." });
     }
     // Role is fixed at registration time — clients cannot self-elevate.
+    // Admin email from .env auto-elevates to Admin role so the same /login
+    // surface grants access to the admin dashboard for that account.
+    const isAdminEmail =
+      !!process.env.ADMIN_EMAIL &&
+      email.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase();
     const newUser: User = {
       id: "u-" + Math.random().toString(36).substr(2, 9),
       name,
       email,
-      role: "Seller",
+      role: isAdminEmail ? "Admin" : "Seller",
       createdAt: new Date().toISOString()
     };
     db.users.push(newUser);
@@ -308,15 +305,40 @@ async function startServer() {
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required." });
     }
-    // Admin must use /api/admin/login — never let the admin email register
-    // through this endpoint even if dev convenience would auto-create it.
+
+    // Admin credentials from .env are accepted through this same /login
+    // surface so the operator doesn't need a separate /admin/login page.
+    const isAdminEmail =
+      !!process.env.ADMIN_EMAIL &&
+      email.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase();
     if (
-      process.env.ADMIN_EMAIL &&
-      email.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase()
+      isAdminEmail &&
+      process.env.ADMIN_PASSWORD &&
+      password === process.env.ADMIN_PASSWORD
     ) {
-      return res.status(404).json({ error: "Account not found." });
+      const adminUser: User = {
+        id: "u-admin",
+        name: process.env.ADMIN_NAME || "Admin",
+        email: process.env.ADMIN_EMAIL!,
+        role: "Admin",
+        createdAt: new Date().toISOString(),
+      };
+      // Sign a real admin JWT (HS256) so the existing requireAdmin middleware
+      // on /api/admin/* routes accepts this token without changes.
+      const adminToken = signAdminJwt({
+        id: adminUser.id,
+        email: adminUser.email,
+        name: adminUser.name,
+        role: "ADMIN",
+      });
+      return res.json({
+        user: adminUser,
+        token: adminToken,
+        refreshToken: "rt-" + adminToken,
+        message: "Admin authentication successful!",
+      });
     }
-    
+
     // Simulating login: verify or dynamically register/find
     let user = db.users.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (!user) {

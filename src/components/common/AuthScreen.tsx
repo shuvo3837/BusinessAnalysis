@@ -156,8 +156,32 @@ export default function AuthScreen({ onSuccess, onBack }: AuthScreenProps) {
         );
       }
 
+      // If the signed-in account is Admin (env-driven credentials), jump
+      // straight to the admin dashboard — no separate /admin/login needed.
+      const isAdmin = data?.user?.role === "Admin";
+      if (isAdmin) {
+        // Seed the keys AdminDashboard reads (`bizmind_admin_token` /
+        // `bizmind_admin_user`) so the hidden /admin/* routes authenticate
+        // without requiring the separate /admin/login page.
+        try {
+          localStorage.setItem("bizmind_admin_token", data.token);
+          localStorage.setItem(
+            "bizmind_admin_user",
+            JSON.stringify({
+              email: data.user.email,
+              name: data.user.name,
+              role: data.user.role,
+            })
+          );
+        } catch {}
+      }
+
       setTimeout(() => {
-        onSuccess(data.token);
+        if (isAdmin) {
+          window.location.href = "/admin/dashboard";
+        } else {
+          onSuccess(data.token);
+        }
       }, 400);
     } catch (err: any) {
       setError(err.message || "Something went wrong.");
@@ -173,43 +197,42 @@ export default function AuthScreen({ onSuccess, onBack }: AuthScreenProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] text-[#F1F5F9] font-sans overflow-x-hidden relative">
+    <div className="min-h-screen h-screen w-full bg-[#0D0D0D] text-[#F1F5F9] font-sans overflow-hidden relative">
       {/* Radial blue gradient glow — matches the landing page hero exactly */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/25 via-[#0D0D0D] to-[#0D0D0D] -z-10" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/25 via-[#0D0D0D] to-[#0D0D0D]" />
 
       {/* Soft floating accents for depth (mirrors LandingPage aesthetic) */}
       <div className="pointer-events-none absolute top-[-15%] left-[-10%] w-[520px] h-[520px] bg-blue-600/15 rounded-full blur-[140px]" />
       <div className="pointer-events-none bottom-[-15%] right-[-10%] w-[520px] h-[520px] bg-indigo-600/15 rounded-full blur-[140px]" />
 
-      {/* Top nav — same logo + brand as the landing page */}
-      <nav className="flex items-center justify-between px-6 py-5 max-w-7xl mx-auto w-full relative z-10">
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-[0_0_15px_rgba(59,130,246,0.5)]">
-            BM
-          </div>
-          <span className="font-bold text-2xl tracking-tight font-syne text-white">
-            BizMind AI
-          </span>
+      {/* Brand — absolutely positioned in the top-left, removed from the centered flow */}
+      <div className="absolute top-6 left-6 z-20 flex items-center gap-2 pointer-events-none">
+        <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-base shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+          BM
         </div>
+        <span className="font-bold text-xl tracking-tight font-syne text-white">
+          BizMind AI
+        </span>
+      </div>
 
-        {onBack && (
-          <button
-            onClick={onBack}
-            className="text-sm text-slate-400 hover:text-white transition-colors flex items-center gap-1"
-          >
-            <ArrowRight className="w-4 h-4 rotate-180" />
-            Back to home
-          </button>
-        )}
-      </nav>
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="absolute top-6 right-6 z-20 text-sm text-slate-400 hover:text-white transition-colors flex items-center gap-1.5"
+        >
+          <ArrowRight className="w-4 h-4 rotate-180" />
+          Back to home
+        </button>
+      )}
 
-      {/* Centered card with generous vertical breathing room */}
-      <main className="relative z-10 flex items-center justify-center px-4 pt-24 pb-16 sm:pt-32 sm:pb-24 min-h-[calc(100vh-80px)]">
+      {/* Centered card — dedicated inner wrapper owns the flex centering so absolutely positioned siblings don't influence it */}
+      <div className="absolute inset-0 z-10 flex items-center justify-center px-4">
         <motion.div
           initial={{ opacity: 0, y: 24, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="w-full max-w-md"
+          className="w-full"
+          style={{ maxWidth: 440 }}
         >
           {/* Glassmorphism card — translucent over dark bg, blurred, soft ring */}
           <div className="relative rounded-2xl bg-[#1A1A26]/70 backdrop-blur-xl border border-[#2A2A3A] shadow-2xl shadow-black/60 overflow-hidden">
@@ -516,7 +539,7 @@ export default function AuthScreen({ onSuccess, onBack }: AuthScreenProps) {
             Secure authentication. Your business data stays yours.
           </p>
         </motion.div>
-      </main>
+      </div>
     </div>
   );
 }
