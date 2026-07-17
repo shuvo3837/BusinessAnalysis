@@ -4,8 +4,9 @@ import path from 'path';
 import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
-  return {
-    plugins: [react(), tailwindcss()],
+  return {    // Relative base so the bundle works under any Vercel subpath / preview URL
+    // (e.g. https://bizmind-abc123.vercel.app/ instead of needing a real domain).
+    base: './',    plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

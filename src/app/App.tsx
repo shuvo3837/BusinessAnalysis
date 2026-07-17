@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import { BusinessProvider, useBusiness } from "../context/BusinessContext";
 
 import LandingPage from "../components/common/LandingPage";
@@ -20,7 +27,11 @@ import AdminDashboard from "../admin/AdminDashboard";
 
 import { LogOut, Target } from "lucide-react";
 
-// Ensure the App content is correctly arranged
+// ONE <Routes> block at the root level is critical: nested sibling <Routes>
+// under the same <BrowserRouter> silently fail to register their internal
+// <Routes> children, which is what caused /login and /register to 404 on
+// Vercel after a hard navigation. Everything in the user app lives under
+// the wildcard route below and is handled by AppContent.
 function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [token, setToken] = useState<string | null>(null);
@@ -29,6 +40,7 @@ function AppContent() {
 
   const { customAnalytics, setCustomAnalytics } = useBusiness();
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const savedToken = localStorage.getItem("partner_token");
@@ -40,72 +52,106 @@ function AppContent() {
     }
   }, []);
 
+  // Keep auth state in sync with browser back/forward buttons.
+  useEffect(() => {
+    const onPop = () => {
+      const savedToken = localStorage.getItem("partner_token");
+      const savedUser = localStorage.getItem("partner_user");
+      setIsAuthenticated(!!(savedToken && savedUser));
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
   const triggerDataRefresh = () => setRefreshTrigger((prev) => prev + 1);
 
-  // The hidden admin surface is rendered by a sibling <Routes> block. Don't
-  // let the user-auth gate render the LandingPage on top of it.
+  // Hidden admin surface lives outside the user-auth gate.
+  // The /admin/* routes are declared in the outer <Routes> block in <App/>,
+  // so we just need to bail out here so LandingPage doesn't paint over them.
   if (location.pathname.startsWith("/admin")) {
     return null;
   }
 
-  if (!isAuthenticated && location.pathname !== "/login") {
-     return <LandingPage onLoginClick={() => window.location.href='/login'} />
+  // Public landing page (root) — only shown when user is not authenticated.
+  if (!isAuthenticated && location.pathname === "/") {
+    return <LandingPage onLoginClick={() => navigate("/login")} />;
   }
 
+  // Login / Register screen — uses SPA navigation, no full page reload.
   if (!isAuthenticated && location.pathname === "/login") {
-     return <AuthScreen onSuccess={(t) => {
-        setToken(t);
-        const savedUser = localStorage.getItem("partner_user");
-        if (savedUser) {
-          setUser(JSON.parse(savedUser));
-        }
-        setIsAuthenticated(true);
-        window.location.href='/dashboard';
-     }} onBack={() => window.location.href='/'} />
+    return (
+      <AuthScreen
+        onSuccess={(t) => {
+          setToken(t);
+          const savedUser = localStorage.getItem("partner_user");
+          if (savedUser) {
+            setUser(JSON.parse(savedUser));
+          }
+          setIsAuthenticated(true);
+          navigate("/dashboard");
+        }}
+        onBack={() => navigate("/")}
+      />
+    );
   }
 
-  return (
-    <div className="flex h-screen bg-[#0A0A0F] font-sans text-slate-300 overflow-hidden">
-      <Sidebar user={user} onLogout={() => {
-          localStorage.removeItem("partner_token");
-          localStorage.removeItem("partner_user");
-          window.location.href = '/';
-      }} onTriggerRefresh={triggerDataRefresh} />
+  // Authenticated shell with sidebar + nested routes.
+  if (isAuthenticated) {
+    return (
+      <div className="flex h-screen bg-[#0A0A0F] font-sans text-slate-300 overflow-hidden">
+        <Sidebar
+          user={user}
+          onLogout={() => {
+            localStorage.removeItem("partner_token");
+            localStorage.removeItem("partner_user");
+            setIsAuthenticated(false);
+            setToken(null);
+            setUser(null);
+            navigate("/");
+          }}
+          onTriggerRefresh={triggerDataRefresh}
+        />
 
-      <main className="flex-1 overflow-y-auto bg-[#0A0A0F] pt-14 md:pt-0 w-full max-w-full">
-        <section className="flex-1 min-w-0 h-full">
-          <Routes>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/upload" element={<DataUpload />} />
-            <Route path="/scanner" element={<NoteScanner />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/market" element={<MarketInsights />} />
-            <Route path="/customers" element={<CustomerBehavior />} />
-            <Route path="/chat" element={<ChatAssistant />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </section>
-      </main>
-      <FloatingChatAssistant />
-    </div>
-  );
+        <main className="flex-1 overflow-y-auto bg-[#0A0A0F] pt-14 md:pt-0 w-full max-w-full">
+          <section className="flex-1 min-w-0 h-full">
+            <Routes>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/upload" element={<DataUpload />} />
+              <Route path="/scanner" element={<NoteScanner />} />
+              <Route path="/analytics" element={<Analytics />} />
+              <Route path="/market" element={<MarketInsights />} />
+              <Route path="/customers" element={<CustomerBehavior />} />
+              <Route path="/chat" element={<ChatAssistant />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          </section>
+        </main>
+        <FloatingChatAssistant />
+      </div>
+    );
+  }
+
+  // Not authenticated and not on a public route — bounce to login.
+  return <Navigate to="/login" replace />;
 }
 
 export default function App() {
   return (
     <BusinessProvider>
       <BrowserRouter>
-        {/* Hidden admin surface — entirely separate auth, not linked from the
-            user app. Routes are listed before AppContent so they bypass the
-            user-auth gate. */}
+        {/* ONE <Routes> at the root — handles every URL in the app, including
+            the hidden admin surface and the user-auth shell. */}
         <Routes>
+          {/* Hidden admin surface — entirely separate auth, not linked from the user app. */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
           <Route path="/admin/*" element={<Navigate to="/admin/login" replace />} />
+
+          {/* Everything else is owned by AppContent (landing / login / authenticated shell). */}
+          <Route path="/*" element={<AppContent />} />
         </Routes>
-        <AppContent />
       </BrowserRouter>
     </BusinessProvider>
   );
