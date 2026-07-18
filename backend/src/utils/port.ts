@@ -14,3 +14,17 @@ export function resolveServerPort(portInput: string | number | undefined, fallba
 
   return fallbackPort;
 }
+
+export function resolveServerHost(hostInput: string | undefined, fallbackHost: string): string {
+  const candidate = typeof hostInput === 'string' ? hostInput.trim() : '';
+
+  if (!candidate) {
+    return fallbackHost;
+  }
+
+  if (candidate === '0.0.0.0' || candidate === '::' || candidate === '[::]') {
+    return fallbackHost;
+  }
+
+  return candidate;
+}

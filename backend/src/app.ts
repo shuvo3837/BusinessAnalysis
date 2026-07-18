@@ -21,7 +21,7 @@ import {
 } from "./types";
 import { connectMongoWithFallback } from "./database/connection";
 import { loadCollections, createFallbackCollections, Collections } from "./database/collections";
-import { resolveServerPort } from "./utils/port";
+import { resolveServerPort, resolveServerHost } from "./utils/port";
 import { verifyAdminCredentials, signAdminJwt } from "./services/adminAuth";
 import { requireAdmin } from "./middleware/requireAdmin";
 
@@ -50,6 +50,7 @@ if (typeof (globalThis as { __dirname?: unknown }).__dirname !== "string") {
 async function startServer() {
   const app = express();
   const PORT = resolveServerPort(process.env.PORT, 3000);
+  const HOST = resolveServerHost(process.env.HOST, "127.0.0.1");
 
   app.use(express.json({ limit: "50mb" }));
 
@@ -1214,8 +1215,8 @@ Note: For the 'analytics' object, generate an updated mock/simulated full analyt
     });
   }
 
-  const server = app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Express server running on http://0.0.0.0:${PORT}`);
+  const server = app.listen(PORT, HOST, () => {
+    console.log(`Express server running on http://${HOST}:${PORT}`);
   });
 
   server.on("error", (err: NodeJS.ErrnoException) => {
